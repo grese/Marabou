@@ -1,0 +1,68 @@
+on: [release]
+
+name: Release
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        compiler: [g++]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Dependencies
+        shell: bash
+        run: |
+          echo "Running install dependences for $RUNNER_OS"
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            echo "installing linux packages"
+          elif [ "$RUNNER_OS" == "Windows" ]; then
+            echo "installing windows packages"
+          elif [ "$RUNNER_OS" == "MacOS" ]; then
+            echo "installing macos packages"
+          fi
+          python3 -m pip install --user --upgrade pip
+          python3 -m pip install --user --upgrade setuptools
+          python3 -m pip install --user wheel
+          python3 -m pip install --user -r maraboupy/test_requirements.txt --cache-dir $HOME/.pip-cache
+
+      - name: Create Build Environment
+        shell: bash
+        run: cmake -E make_directory build
+
+      - name: Configure CMake
+        # Use a bash shell so we can use the same syntax for environment variable bb
+        # access regardless of the host operating system
+        shell: bash
+        working-directory: build
+        run: |
+          cmake -DCMAKE_CXX_COMPILER=${{ matrix.compiler }} \
+            -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+            -DBUILD_STATIC_MARABOU=ON \
+            -DBUILD_PYTHON=ON
+
+      - name: Build
+        shell: bash
+        run: make -j2
+        working-directory: build
+        
+      - name: Run system tests
+        shell: bash
+        run: ctest -L system -j 2 
+        working-directory: build
+ 
+      - name: Run regression tests
+        shell: bash
+        run: ctest -L regress[0-1] -j 2 
+        working-directory: build
+
+      - name: Python Bindings Install Check
+        shell: bash
+        run: |
+          export PYTHONPATH="$PYTHONPATH:$(dirname $(find $GITHUB_WORKSPACE -name "maraboupy" -type d))"
+          python3 -c "import maraboupy"
