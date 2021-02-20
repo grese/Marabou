@@ -14,7 +14,6 @@ jobs:
         compiler: [g++]
     steps:
       - uses: actions/checkout@v2
-
       - name: Install Dependencies
         shell: bash
         run: |
@@ -44,7 +43,8 @@ jobs:
           cmake -DCMAKE_CXX_COMPILER=${{ matrix.compiler }} \
             -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
             -DBUILD_STATIC_MARABOU=ON \
-            -DBUILD_PYTHON=ON
+            -DBUILD_PYTHON=ON \
+            $([ "$RUNNER_OS" == "Windows" ] && echo "-DPYTHON_EXECUTABLE=$(which $PY_CMD) -G'Visual Studio 15 2017 Win64'" || echo "")
 
       - name: Build
         shell: bash
@@ -66,3 +66,38 @@ jobs:
         run: |
           export PYTHONPATH="$PYTHONPATH:$(dirname $(find $GITHUB_WORKSPACE -name "maraboupy" -type d))"
           python3 -c "import maraboupy"
+      
+      - name: Packaging
+        id: packaging
+        shell: bash
+        run: |
+          BINARY_EXTENSION=$([ "$RUNNER_OS" == "Windows" ] && echo ".exe" || echo "")
+          ASSETNAME="marabou-$(echo $RUNNER_OS | tr '[[:upper:]]' '[[:lower:]]').zip"
+          mkdir dist
+          cp "./build/Marabou$BINARY_EXTENSION" ./dist
+          cd dist && zip -r "../$ASSETNAME" . && cd -
+          echo "::set-output name=release_assetname::$ASSETNAME"
+          echo "::set-output name=release_assetpath::./$ASSETNAME"
+      
+      - name: Fetch Release Info
+        id: release_info
+        shell: bash
+        env:
+          ASSETNAME: ${{ steps.packaging.outputs.release_assetname }}
+        run: |
+          RELEASE_ID="$(python3 ./tools/release_id.py -o NeuralNetworkVerification -r Marabou -a $ASSETNAME | grep 'release_id:' | cut -d ':' -f 2)"
+          RELEASE_UPLOAD_URL="https://uploads.github.com/repos/NeuralNetworkVerification/Marabou/releases/$RELEASE_ID/assets?name=$ASSETNAME"
+          echo "::set-output name=release_id::$RELEASE_ID"
+          echo "::set-output name=release_upload_url::$RELEASE_UPLOAD_URL"
+      
+      - name: Upload Release Asset
+        id: release_assets
+        shell: bash
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release_info.outputs.release_upload_url }}
+          asset_path: ${{ steps.packaging.outputs.release_assetpath }}
+          asset_name: ${{ steps.packaging.outputs.release_assetname }}
+          asset_content_type: application/zip
