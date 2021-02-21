@@ -43,3 +43,4 @@ build
 /* Distribution */
 /dist
 /secret
+*.egg-info
