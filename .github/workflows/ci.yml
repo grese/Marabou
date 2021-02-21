@@ -115,9 +115,7 @@ jobs:
           ARTIFACTS_DIR="./artifacts/dist/$RUNNER_OS/$COMPILER"
           mkdir -p $ARTIFACTS_DIR
           ls ./build ./build/bin
-          cp -R ./build/bin/ $ARTIFACTS_DIR
-          cp ./build/Marabou $ARTIFACTS_DIR
-          cp -R ./maraboupy $ARTIFACTS_DIR
+          cp build/Marabou maraboupy COPYING README.md $ARTIFACTS_DIR
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v2
@@ -135,15 +133,11 @@ jobs:
         with:
           name: marabou-artifacts
       
-      - name: Check artifacts
+      - name: Create release
         shell: bash
         run: |
           ls ./dist/**/*
-          mkdir release
-          cp -R ./dist/Linux/g++/maraboupy ./release/maraboupy
-          mkdir ./release/maraboupy/bin
-          cp ./dist/Linux/g++/Marabou ./release/maraboupy/bin/Marabou-linux
-          cd ./release/maraboupy/ && rm -rf test __pycache__ .pytest_cache && cd -
+          ./tools/create_release.sh '0.0.0'
 
       - name: Publish package to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
