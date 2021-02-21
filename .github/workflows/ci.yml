@@ -115,7 +115,7 @@ jobs:
           ARTIFACTS_DIR="./artifacts/dist/$RUNNER_OS/$COMPILER"
           mkdir -p $ARTIFACTS_DIR
           ls ./build ./build/bin
-          cp build/Marabou maraboupy COPYING README.md $ARTIFACTS_DIR
+          cp -R maraboupy build/Marabou COPYING README.md $ARTIFACTS_DIR
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v2
@@ -133,6 +133,7 @@ jobs:
         with:
           name: marabou-artifacts
       
+      # TODO: proper versioning for test packages
       - name: Create release
         shell: bash
         run: |
