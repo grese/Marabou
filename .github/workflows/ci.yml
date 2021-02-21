@@ -17,7 +17,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-
       - name: Install Packages
         if: 
         run: |
@@ -115,7 +114,7 @@ jobs:
           ARTIFACTS_DIR="./artifacts/dist/$RUNNER_OS/$COMPILER"
           mkdir -p $ARTIFACTS_DIR
           ls ./build ./build/bin
-          cp -R maraboupy build/Marabou COPYING README.md $ARTIFACTS_DIR
+          cp -R maraboupy build/Marabou $ARTIFACTS_DIR
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v2
@@ -128,7 +127,8 @@ jobs:
     needs: build
     name: Publish job
     steps:
-      - name: Download all workflow artifacts
+      - name: Checkout & Download Artifacts
+        uses: actions/checkout@v2
         uses: actions/download-artifact@v2
         with:
           name: marabou-artifacts
