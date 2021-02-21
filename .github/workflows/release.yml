@@ -67,62 +67,63 @@ jobs:
           export PYTHONPATH="$PYTHONPATH:$(dirname $(find $GITHUB_WORKSPACE -name "maraboupy" -type d))"
           python3 -c "import maraboupy"
       
-      - name: Binary Packaging
-        id: packaging
-        shell: bash
-        run: |
-          BINARY_OS=$(echo $RUNNER_OS | tr '[[:upper:]]' '[[:lower:]]')
-          BINARY_EXTENSION=$([ "$BINARY_OS" == "windows" ] && echo ".exe" || echo "")
-          ASSETNAME="marabou-$BINARY_OS.zip"
-          mkdir -p dist
-          cp "./build/Marabou$BINARY_EXTENSION" ./dist
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            powershell.exe -exec bypass -c "Compress-Archive . ../$ASSETNAME"
-          else
-            zip -r "../$ASSETNAME" .
-          fi
-          cd -
-          echo "::set-output name=release_os::./$BINARY_OS"
-          echo "::set-output name=release_assetname::$ASSETNAME"
-          echo "::set-output name=release_assetpath::./$ASSETNAME"
+  #     - name: Binary Packaging
+  #       id: packaging
+  #       shell: bash
+  #       run: |
+  #         BINARY_OS=$(echo $RUNNER_OS | tr '[[:upper:]]' '[[:lower:]]')
+  #         BINARY_EXTENSION=$([ "$BINARY_OS" == "windows" ] && echo ".exe" || echo "")
+  #         ASSETNAME="marabou-$BINARY_OS.zip"
+  #         mkdir -p dist
+  #         cp "./build/Marabou$BINARY_EXTENSION" ./dist
+  #         if [ "$RUNNER_OS" == "Windows" ]; then
+  #           powershell.exe -exec bypass -c "Compress-Archive . ../$ASSETNAME"
+  #         else
+  #           zip -r "../$ASSETNAME" .
+  #         fi
+  #         cd -
+  #         echo "::set-output name=release_os::./$BINARY_OS"
+  #         echo "::set-output name=release_assetname::$ASSETNAME"
+  #         echo "::set-output name=release_assetpath::./$ASSETNAME"
       
-      - name: Fetch Release Info
-        id: release_info
-        shell: bash
-        env:
-          ASSETNAME: ${{ steps.packaging.outputs.release_assetname }}
-        run: |
-          RELEASE_ID="$(python3 ./tools/release_id.py -o grese -r Marabou -a $ASSETNAME | grep 'release_id:' | cut -d ':' -f 2)"
-          RELEASE_UPLOAD_URL="https://uploads.github.com/repos/grese/Marabou/releases/$RELEASE_ID/assets?name=$ASSETNAME"
-          echo "$RELEASE_UPLOAD_URL"
-          echo "::set-output name=release_id::$RELEASE_ID"
-          echo "::set-output name=release_upload_url::$RELEASE_UPLOAD_URL"
+  #     - name: Fetch Release Info
+  #       id: release_info
+  #       shell: bash
+  #       env:
+  #         ASSETNAME: ${{ steps.packaging.outputs.release_assetname }}
+  #       run: |
+  #         RELEASE_ID="$(python3 ./tools/release_id.py -o grese -r Marabou -a $ASSETNAME | grep 'release_id:' | cut -d ':' -f 2)"
+  #         RELEASE_UPLOAD_URL="https://uploads.github.com/repos/grese/Marabou/releases/$RELEASE_ID/assets?name=$ASSETNAME"
+  #         echo "$RELEASE_UPLOAD_URL"
+  #         echo "::set-output name=release_id::$RELEASE_ID"
+  #         echo "::set-output name=release_upload_url::$RELEASE_UPLOAD_URL"
       
-      - name: Upload Release Asset
-        id: release_assets
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.release_info.outputs.release_upload_url }}
-          asset_path: ${{ steps.packaging.outputs.release_assetpath }}
-          asset_name: ${{ steps.packaging.outputs.release_assetname }}
-          asset_content_type: application/zip
+  #     - name: Upload Release Asset
+  #       id: release_assets
+  #       uses: actions/upload-release-asset@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ steps.release_info.outputs.release_upload_url }}
+  #         asset_path: ${{ steps.packaging.outputs.release_assetpath }}
+  #         asset_name: ${{ steps.packaging.outputs.release_assetname }}
+  #         asset_content_type: application/zip
 
-      - name: Publish package to TestPyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          verbose: true
-          packages_dir: ./maraboupy/
-          user: __token__
-          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/
+  # publish:
+  #   - name: Publish package to TestPyPI
+  #       uses: pypa/gh-action-pypi-publish@release/v1
+  #       with:
+  #         verbose: true
+  #         packages_dir: ./maraboupy/
+  #         user: __token__
+  #         password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+  #         repository_url: https://test.pypi.org/legacy/
 
-      # RELEASE BUILD:
-      # - name: Publish pip package to PyPI
-      #   uses: pypa/gh-action-pypi-publish@release/v1
-      #   with:
-      #     verbose: true
-      #     user: __token__
-      #     password: ${{ secrets.PYPI_API_TOKEN }}
-      #     packages_dir: ./maraboupy/
+  # RELEASE BUILD:
+  # - name: Publish pip package to PyPI
+  #   uses: pypa/gh-action-pypi-publish@release/v1
+  #   with:
+  #     verbose: true
+  #     user: __token__
+  #     password: ${{ secrets.PYPI_API_TOKEN }}
+  #     packages_dir: ./maraboupy/
