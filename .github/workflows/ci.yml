@@ -86,11 +86,18 @@ jobs:
         run: ctest -L regress[0-1] -j 2 
         working-directory: build
 
-
       - name: Python Bindings Install Check
         run: |
           export PYTHONPATH="$PYTHONPATH:$(dirname $(find $GITHUB_WORKSPACE -name "maraboupy" -type d))"
           python3 -c "import maraboupy"
+
+      - name: Archive build artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: marabou-$RUNNER_OS
+          path: |
+            build/Marabou*
+            build/bin
 
       - name: Generate Python Code Coverage
         if: ${{ matrix.compiler == 'g++' }} 
