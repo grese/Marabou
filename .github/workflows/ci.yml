@@ -6,10 +6,14 @@ env:
 
 jobs:
   build:
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
         compiler: [g++, clang++]
+        experimental: [false]
 
     name: Debug build 
 
@@ -148,7 +152,7 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           verbose: true
-          packages_dir: ./maraboupy/
+          packages_dir: ./release/
           user: __token__
           password: ${{ secrets.PYPI_TOKEN }}
           repository_url: https://test.pypi.org/legacy/
