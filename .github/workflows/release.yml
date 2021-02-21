@@ -4,29 +4,18 @@ on:
 
 name: Release
 
-env:
-  BUILD_TYPE: Release
-
 jobs:
   build:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest]
         compiler: [g++]
     steps:
       - uses: actions/checkout@v2
       - name: Install Dependencies
         shell: bash
         run: |
-          echo "Running install dependences for $RUNNER_OS"
-          if [ "$RUNNER_OS" == "Linux" ]; then
-            echo "installing linux packages"
-          elif [ "$RUNNER_OS" == "Windows" ]; then
-            echo "installing windows packages"
-          elif [ "$RUNNER_OS" == "MacOS" ]; then
-            echo "installing macos packages"
-          fi
           python3 -m pip install --user --upgrade pip
           python3 -m pip install --user --upgrade setuptools
           python3 -m pip install --user wheel
@@ -41,7 +30,7 @@ jobs:
         working-directory: build
         run: |
           cmake -DCMAKE_CXX_COMPILER=${{ matrix.compiler }} \
-            -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+            -DCMAKE_BUILD_TYPE=Release \
             -DBUILD_STATIC_MARABOU=ON \
             -DBUILD_PYTHON=ON \
             $([ "$RUNNER_OS" == "Windows" ] && echo "-DPYTHON_EXECUTABLE=$(which $PY_CMD) -G'Visual Studio 15 2017 Win64'" || echo "")
@@ -50,23 +39,55 @@ jobs:
         shell: bash
         run: make -j2
         working-directory: build
-        
-      - name: Run system tests
-        shell: bash
-        run: ctest -L system -j 2 
-        working-directory: build
- 
-      - name: Run regression tests
-        shell: bash
-        run: ctest -L regress[0-1] -j 2 
-        working-directory: build
-
+      
       - name: Python Bindings Install Check
         shell: bash
         run: |
           export PYTHONPATH="$PYTHONPATH:$(dirname $(find $GITHUB_WORKSPACE -name "maraboupy" -type d))"
           python3 -c "import maraboupy"
+
+      - name: Copy Artifacts
+        env:
+          COMPILER: ${{ matrix.compiler }} 
+        shell: bash
+        run: ./tools/copy_artifacts.sh "./artifacts/dist/$RUNNER_OS/$COMPILER"
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: marabou-artifacts
+          path: ./artifacts
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: build
+    name: Publish job
+    steps:
+      - name: Get release info
+        id: release_info
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+
+      - name: Download all workflow artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: marabou-artifacts
       
+      - name: Create release
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ steps.release_info.outputs.tag }}
+        run: |
+          ls ./dist/**/*
+          ./tools/create_release.sh
+
+      - name: Publish pip package to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          verbose: true
+          packages_dir: ./release/
+          user: __token__
+          password: ${{ secrets.PYPI_TOKEN }}
+
   #     - name: Binary Packaging
   #       id: packaging
   #       shell: bash
@@ -119,11 +140,4 @@ jobs:
   #         password: ${{ secrets.TEST_PYPI_API_TOKEN }}
   #         repository_url: https://test.pypi.org/legacy/
 
-  # RELEASE BUILD:
-  # - name: Publish pip package to PyPI
-  #   uses: pypa/gh-action-pypi-publish@release/v1
-  #   with:
-  #     verbose: true
-  #     user: __token__
-  #     password: ${{ secrets.PYPI_API_TOKEN }}
-  #     packages_dir: ./maraboupy/
+

@@ -4,8 +4,7 @@ RELEASE_VERSION="$1"
 
 echo "copying release assets to ./release"
 mkdir release
-cp -R ./dist/Linux/g++/maraboupy ./release/maraboupy
-cp ./dist/Linux/g++/setup.py ./release/setup.py
+cp -R ./dist/Linux/g++/maraboupy setup.py COPYING README.md ./release/
 mkdir ./release/maraboupy/bin
 cp ./dist/Linux/g++/Marabou ./release/maraboupy/bin/Marabou-linux
 

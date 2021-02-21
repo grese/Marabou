@@ -110,11 +110,7 @@ jobs:
         env:
           COMPILER: ${{ matrix.compiler }} 
         shell: bash
-        run: |
-          ARTIFACTS_DIR="./artifacts/dist/$RUNNER_OS/$COMPILER"
-          mkdir -p $ARTIFACTS_DIR
-          ls ./build ./build/bin
-          cp -R maraboupy build/Marabou $ARTIFACTS_DIR
+        run: ./tools/copy_artifacts.sh "./artifacts/dist/$RUNNER_OS/$COMPILER"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v2
@@ -127,8 +123,10 @@ jobs:
     needs: build
     name: Publish job
     steps:
-      - name: Checkout & Download Artifacts
+      - name: Checkout
         uses: actions/checkout@v2
+      
+      - name: Download Artifacts
         uses: actions/download-artifact@v2
         with:
           name: marabou-artifacts
