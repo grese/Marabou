@@ -14,7 +14,6 @@ jobs:
     name: Debug build 
 
     steps:
-
       - uses: actions/checkout@v2
 
       - name: Install Packages
@@ -91,13 +90,21 @@ jobs:
           export PYTHONPATH="$PYTHONPATH:$(dirname $(find $GITHUB_WORKSPACE -name "maraboupy" -type d))"
           python3 -c "import maraboupy"
 
-      - name: Archive build artifacts
+      - name: Copy artifacts
+        env:
+          COMPILER: ${{ matrix.compiler }} 
+        shell: bash
+        run: |
+          ARTIFACTS_DIR="./artifacts/$RUNNER_OS/$COMPILER"
+          mkdir -p $ARTIFACTS_DIR
+          cp -R ./build/bin/ $ARTIFACTS_DIR
+          cp ./build/Marabou $ARTIFACTS_DIR
+
+      - name: Archive artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: marabou-$RUNNER_OS
-          path: |
-            build/Marabou*
-            build/bin
+          name: marabou-artifacts
+          path: ./artifacts
 
       - name: Generate Python Code Coverage
         if: ${{ matrix.compiler == 'g++' }} 
@@ -108,3 +115,17 @@ jobs:
         uses: codecov/codecov-action@v1
         with:
           files: ./coverage.xml
+  
+  publish:
+    runs-on: ubuntu-latest
+    needs: build
+    name: Publish job
+    - name: Download all workflow run artifacts
+      uses: actions/download-artifact@v2
+      with: marabou-artifacts
+    
+    - name: Check artifacts
+      shell: bash
+      run: |
+        ls ./artifacts/**/*
+
