@@ -8,9 +8,9 @@ jobs:
   build:
     strategy:
       matrix:
+        os: [ubuntu-latest, macos-latest]
         compiler: [g++, clang++]
 
-    runs-on: ubuntu-latest #TODO: macos-latest
     name: Debug build 
 
     steps:
@@ -19,15 +19,15 @@ jobs:
       - name: Install Packages
         if: 
         run: |
-           sudo apt-get update
-           sudo apt-get install -y \
-             ccache \
-             cxxtest
-           python3 -m pip install --user --upgrade pip
-           python3 -m pip install --user --upgrade setuptools
-           python3 -m pip install --user wheel
-           python3 -m pip install --user -r maraboupy/test_requirements.txt --cache-dir $HOME/.pip-cache 
-           echo "/usr/lib/ccache" >> $GITHUB_PATH
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            sudo apt-get update
+            sudo apt-get install -y ccache cxxtest
+          fi
+          python3 -m pip install --user --upgrade pip
+          python3 -m pip install --user --upgrade setuptools
+          python3 -m pip install --user wheel
+          python3 -m pip install --user -r maraboupy/test_requirements.txt --cache-dir $HOME/.pip-cache 
+          echo "/usr/lib/ccache" >> $GITHUB_PATH
 
       - name: Create Build Environment
         run: cmake -E make_directory build
@@ -68,7 +68,13 @@ jobs:
         # Note the current convention is to use the -S and -B options here to specify source 
         # and build directories, but this is only available with CMake 3.13 and higher.  
         # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
-        run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_PYTHON=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
+        run: |
+          cmake $GITHUB_WORKSPACE \
+            -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+            -DBUILD_STATIC_MARABOU=ON \
+            -DBUILD_PYTHON=ON \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
 
       - name: Build
         run: make -j2
@@ -90,22 +96,6 @@ jobs:
           export PYTHONPATH="$PYTHONPATH:$(dirname $(find $GITHUB_WORKSPACE -name "maraboupy" -type d))"
           python3 -c "import maraboupy"
 
-      - name: Copy artifacts
-        env:
-          COMPILER: ${{ matrix.compiler }} 
-        shell: bash
-        run: |
-          ARTIFACTS_DIR="./artifacts/$RUNNER_OS/$COMPILER"
-          mkdir -p $ARTIFACTS_DIR
-          cp -R ./build/bin/ $ARTIFACTS_DIR
-          cp ./build/Marabou $ARTIFACTS_DIR
-
-      - name: Archive artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: marabou-artifacts
-          path: ./artifacts
-
       - name: Generate Python Code Coverage
         if: ${{ matrix.compiler == 'g++' }} 
         run: python3 -m pytest --cov=maraboupy --cov-report=xml  maraboupy/test
@@ -115,7 +105,24 @@ jobs:
         uses: codecov/codecov-action@v1
         with:
           files: ./coverage.xml
-  
+
+      - name: Copy Artifacts
+        env:
+          COMPILER: ${{ matrix.compiler }} 
+        shell: bash
+        run: |
+          ARTIFACTS_DIR="./artifacts/dist/$RUNNER_OS/$COMPILER"
+          mkdir -p $ARTIFACTS_DIR
+          cp -R ./build/bin/ $ARTIFACTS_DIR
+          cp ./build/Marabou $ARTIFACTS_DIR
+          cp ./maraboupy $ARTIFACTS_DIR
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: marabou-artifacts
+          path: ./artifacts
+
   publish:
     runs-on: ubuntu-latest
     needs: build
@@ -129,4 +136,19 @@ jobs:
       - name: Check artifacts
         shell: bash
         run: |
-          ls ./**/*
+          ls ./dist/**/*
+          mkdir release
+          cp -R ./dist/Linux/g++/maraboupy ./release/maraboupy
+          mkdir ./release/maraboupy/bin
+          cp ./dist/Linux/g++/Marabou ./release/maraboupy/bin/Marabou-linux
+          cp ./dist/MacOS/g++/Marabou ./release/maraboupy/bin/Marabou-macos
+          cd ./release/maraboupy/ && rm -rf test __pycache__ .pytest_cache && cd -
+
+      - name: Publish package to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          verbose: true
+          packages_dir: ./maraboupy/
+          user: __token__
+          password: ${{ secrets.PYPI_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
