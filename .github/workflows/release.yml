@@ -31,9 +31,7 @@ jobs:
         run: |
           cmake -DCMAKE_CXX_COMPILER=${{ matrix.compiler }} \
             -DCMAKE_BUILD_TYPE=Release \
-            -DBUILD_STATIC_MARABOU=ON \
-            -DBUILD_PYTHON=ON \
-            $([ "$RUNNER_OS" == "Windows" ] && echo "-DPYTHON_EXECUTABLE=$(which $PY_CMD) -G'Visual Studio 15 2017 Win64'" || echo "")
+            -DBUILD_PYTHON=ON
 
       - name: Build
         shell: bash

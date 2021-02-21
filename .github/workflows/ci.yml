@@ -119,6 +119,8 @@ jobs:
           path: ./artifacts
 
   publish:
+    # run publish step when PR is merged
+    # if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     needs: build
     name: Publish job
@@ -131,12 +133,12 @@ jobs:
         with:
           name: marabou-artifacts
       
-      # TODO: proper versioning for test packages
+      # TODO: proper versioning for test packages (maybe use $GITHUB_SHA)
       - name: Create release
         shell: bash
         run: |
           ls ./dist/**/*
-          ./tools/create_release.sh '0.0.0'
+          ./tools/create_release.sh "0.0.0"
 
       - name: Publish package to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -144,5 +146,5 @@ jobs:
           verbose: true
           packages_dir: ./release/
           user: __token__
-          password: ${{ secrets.PYPI_TOKEN }}
+          password: ${{ secrets.TESTPYPI_TOKEN }}
           repository_url: https://test.pypi.org/legacy/
