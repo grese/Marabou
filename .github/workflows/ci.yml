@@ -2,7 +2,7 @@ on: [push, pull_request]
 name: CI
 
 env:
-  BUILD_TYPE: Debug
+  BUILD_TYPE: Release
 
 jobs:
   build:
@@ -11,7 +11,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        # os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
         compiler: [g++, clang++]
         experimental: [false]
 
@@ -145,7 +146,6 @@ jobs:
           cp -R ./dist/Linux/g++/maraboupy ./release/maraboupy
           mkdir ./release/maraboupy/bin
           cp ./dist/Linux/g++/Marabou ./release/maraboupy/bin/Marabou-linux
-          cp ./dist/MacOS/g++/Marabou ./release/maraboupy/bin/Marabou-macos
           cd ./release/maraboupy/ && rm -rf test __pycache__ .pytest_cache && cd -
 
       - name: Publish package to TestPyPI
