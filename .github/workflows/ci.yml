@@ -1,11 +1,8 @@
 on: [push, pull_request]
 name: CI
 
-env:
-  BUILD_TYPE: Release
-
 jobs:
-  build:
+  debug-build:
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.experimental }}
     strategy:
@@ -75,8 +72,7 @@ jobs:
         # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
         run: |
           cmake $GITHUB_WORKSPACE \
-            -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
-            -DBUILD_STATIC_MARABOU=ON \
+            -DCMAKE_BUILD_TYPE=Release \
             -DBUILD_PYTHON=ON \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
