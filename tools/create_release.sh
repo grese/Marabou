@@ -14,3 +14,8 @@ cd ./release/maraboupy/ && rm -rf test __pycache__ .pytest_cache && cd -
 echo "updating version in setup.py & setup.cfg"
 perl -pe "s/version = '(\d+\.)*\d+'/version = '$RELEASE_VERSION'/" -i ./release/setup.py
 perl -pe "s/version = (\d+\.)*\d+/version = $RELEASE_VERSION/" -i ./release/setup.cfg
+
+echo "generating package"
+cd ./release
+python3 setup.py bdist_wheel --universal
+cd -
