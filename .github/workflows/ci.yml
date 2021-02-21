@@ -123,7 +123,8 @@ jobs:
     steps:
       - name: Download all workflow run artifacts
         uses: actions/download-artifact@v2
-        with: marabou-artifacts
+        with:
+          name: marabou-artifacts
       
       - name: Check artifacts
         shell: bash
