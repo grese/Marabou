@@ -121,7 +121,7 @@ jobs:
     needs: build
     name: Publish job
     steps:
-      - name: Download all workflow run artifacts
+      - name: Download all workflow artifacts
         uses: actions/download-artifact@v2
         with:
           name: marabou-artifacts
@@ -129,4 +129,4 @@ jobs:
       - name: Check artifacts
         shell: bash
         run: |
-          ls ./artifacts/**/*
+          ls ./**/*
