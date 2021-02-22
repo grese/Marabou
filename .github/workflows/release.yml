@@ -84,7 +84,7 @@ jobs:
           verbose: true
           packages_dir: ./release/
           user: __token__
-          password: ${{ secrets.PYPI_TOKEN }}
+          password: ${{ secrets.MARABOUPY_PYPI_TOKEN }}
 
   #     - name: Binary Packaging
   #       id: packaging

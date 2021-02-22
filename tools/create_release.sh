@@ -5,6 +5,7 @@ RELEASE_VERSION="$1"
 echo "copying release assets to ./release"
 mkdir release
 cp -R ./dist/Linux/g++/maraboupy MANIFEST.in pyproject.toml setup.cfg setup.py COPYING README.md ./release/
+cp ./release/COPYING ./release/LICENSE
 mkdir ./release/maraboupy/bin
 cp ./dist/Linux/g++/Marabou ./release/maraboupy/bin/Marabou-linux
 
