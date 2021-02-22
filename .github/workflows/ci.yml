@@ -140,6 +140,13 @@ jobs:
           ls ./dist/**/*
           ./tools/create_release.sh "0.0.0"
 
+      - name: CHECK_PYPI_TOKEN
+        env:
+          TESTPYPI_TOKEN: ${{ secrets.TESTPYPI_TOKEN }}
+        shell: bash
+        run: |
+          echo "TESTPYPI_TOKEN: $TEST_TOKEN"
+
       - name: Publish package to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
