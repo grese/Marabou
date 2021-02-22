@@ -128,6 +128,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       
+      - name: Install packages
+        shell: bash
+        run: |
+          python3 -m pip install --user --upgrade pip
+          python3 -m pip install --user --upgrade setuptools
+          python3 -m pip install --user wheel
+
       - name: Download Artifacts
         uses: actions/download-artifact@v2
         with:
@@ -139,6 +146,7 @@ jobs:
         run: |
           ls ./dist/**/*
           ./tools/create_release.sh "0.0.0"
+          ls ./release/**/*
 
       - name: Publish package to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
