@@ -61,9 +61,19 @@ jobs:
     needs: build
     name: Publish job
     steps:
+      - name: Install packages
+        shell: bash
+        run: |
+          python3 -m pip install --user --upgrade pip
+          python3 -m pip install --user --upgrade setuptools
+          python3 -m pip install --user wheel
+
       - name: Get release info
         id: release_info
         run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+
+      - name: Checkout
+        uses: actions/checkout@v2
 
       - name: Download all workflow artifacts
         uses: actions/download-artifact@v2
@@ -77,6 +87,7 @@ jobs:
         run: |
           ls ./dist/**/*
           ./tools/create_release.sh
+          ls ./release/**/*
 
       - name: Publish pip package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -127,15 +138,3 @@ jobs:
   #         asset_path: ${{ steps.packaging.outputs.release_assetpath }}
   #         asset_name: ${{ steps.packaging.outputs.release_assetname }}
   #         asset_content_type: application/zip
-
-  # publish:
-  #   - name: Publish package to TestPyPI
-  #       uses: pypa/gh-action-pypi-publish@release/v1
-  #       with:
-  #         verbose: true
-  #         packages_dir: ./maraboupy/
-  #         user: __token__
-  #         password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-  #         repository_url: https://test.pypi.org/legacy/
-
-
